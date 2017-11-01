@@ -5,6 +5,7 @@ ensparql = SPARQLWrapper("http://dbpedia.org/sparql")
 nlsparql = SPARQLWrapper("http://nl.dbpedia.org/sparql")
 ensparql.setReturnFormat(JSON)
 nlsparql.setReturnFormat(JSON)
+counteri = 0
 
 def getLanguage(uri):
     #return the domain the uri is from (nl/en)
@@ -17,6 +18,8 @@ def getLanguage(uri):
         return None
 
 def getRelations(uri):
+    global counteri
+    counteri+=1
     query = 'select ?r ?p where {<' + uri + '> ?r ?p .}'
     sparql = ensparql#assumes you can query English dbpedia by default, including regarding things that are not of the dbpedia domain
     if getLanguage(uri) == 'nl':
@@ -25,9 +28,11 @@ def getRelations(uri):
     results = sparql.query().convert()["results"]["bindings"]
     pairs = []
     for pair in results:
-        pairs.append((pair['r']['value'],pair['p']['value']))
+        if isDBPedia(pair['r']['value']):
+            pairs.append((pair['r']['value'][pair['r']['value'].rfind('/')+1:],pair['p']['value'][pair['p']['value'].rfind('/')+1:]))#removes URIs
+            #pairs.append((pair['r']['value'],pair['p']['value']))
     return pairs
-    
+
 def getDutchResource(srcUri):
     #go from a English source to the Dutch counterpart
     query = 'select ?p where {<' + srcUri + '> <http://www.w3.org/2002/07/owl#sameAs> ?p .}'
@@ -61,7 +66,8 @@ def getOtherResource(srcUri):
         
 def getSameAs(srcUri):
     results = []
-    for p,r in getRelations(srcUri):
+    source = getRelations(srcUri)
+    for p,r in source:
         if 'sameAs' in p:
             results.append((p,r))
     return results
@@ -78,17 +84,21 @@ def printMatch(o1,p1,r1,o2,p2,r2):
     JoostKit.tablePrint('origin\tproperty\ttarget\n%s\t%s\t%s\n%s\t%s\t%s'%(o1,p1,r1,o2,p2,r2))
         
 def findParallelConnections(srcUri,parUri):
-    print("Finding parallels for " + str(srcUri) + " and " + str(parUri))
+    print("Finding parallels for " + str(srcUri[srcUri.rfind('/')+1:]) + " and " + str(parUri[parUri.rfind('/')+1:]))
     parrels = getRelations(parUri)
-    for p1,r1 in getRelations(srcUri):
+    source = getRelations(srcUri)
+    matches = []
+    for p1,r1 in source:
+        #print counteri
         for p2,r2 in parrels:
-            if r1 == r2:
+            if r1 == r2 and p1 != p2:
                 print("Identical match!")
                 printMatch(srcUri,p1,r1,parUri,p2,r2)
-            if isDBPedia(r1) and isDBPedia(r2):
-                overlap = set(getSameAs(r1)).intersection(set(getSameAs(r2)))
-                if len(overlap) > 0:
-                    print(overlap)
+            #if isDBPedia(r1) and isDBPedia(r2):
+            #    overlap = set(getSameAs(r1)).intersection(set(getSameAs(r2)))
+            #    if len(overlap) > 0:
+            #        print(overlap)
+    #print matches
 
 target = 'http://dbpedia.org/resource/The_Hague'
 # target = 'http://nl.dbpedia.org/resource/Den_Haag'
