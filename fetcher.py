@@ -19,8 +19,8 @@ def getLanguage(uri):
 
 def getRelations(uri):
     query = 'select ?p ?r where {<' + uri + '> ?p ?r .}'
-    global counteri
-    counteri+=1
+    # global counteri
+    # counteri+=1
     sparql = ensparql#assumes you can query English dbpedia by default, including regarding things that are not of the dbpedia domain
     if getLanguage(uri) == 'nl':
         sparql = nlsparql
@@ -68,7 +68,7 @@ def getSameAs(srcUri):
     source = getRelations(srcUri)
     for p,r in source:
         if 'sameAs' in p:
-            results.append((p,r))
+            results.append(r)
     return results
     
 def isURI(s):
@@ -79,12 +79,26 @@ def isDBPedia(s):
     #determine whether URI is from DBPedia
     return isURI(s) and 'dbpedia' in s
     
+def isInScope(s):
+    #further limit resources we're looking at by filtering only the Dutch and English resources
+    return isDBPedia and (s.startswith('http://dbpedia.org') or s.startswith('http://nl.dbpedia.org'))
+    
 def URIname(uri):
     #get the printable name from a URI
     return uri[uri.rfind('/')+1:]
     
 def printMatch(o1,p1,r1,o2,p2,r2):
     JoostKit.tablePrint('origin\tproperty\ttarget\n%s\t%s\t%s\n%s\t%s\t%s'%(o1,p1,r1,o2,p2,r2))
+    
+def makeSameSet(uri,sameset=None):
+    #recursively explore all resources that are the same as uri (so using the transitivity of sameAs)
+    if sameset == None:
+        sameset = set([uri])
+    for u in getSameAs(uri):
+        if isInScope(u) and u not in sameset:
+            sameset.add(u)
+            makeSameSet(u,sameset)
+    return sameset
         
 def findParallelConnections(srcUri,parUri):
     print("Finding parallels for " + str(srcUri) + " and " + str(parUri))
@@ -93,14 +107,14 @@ def findParallelConnections(srcUri,parUri):
     print("Original has %d relations\nParallel has %d triples\nComparing %d triples"%(len(srcrels),len(parrels),len(srcrels)*len(parrels)))
     for p1,r1 in srcrels:
         #print counteri
-        for p2,r2 in parrels:
+        for p2,r2 in parrels:#TODO: not a double loop, try to resolve this with clever data structure
             if r1 == r2:
                 print("Identical match!")
                 printMatch(srcUri,p1,r1,parUri,p2,r2)
-            #if isDBPedia(r1) and isDBPedia(r2):
-            #    overlap = set(getSameAs(r1)).intersection(set(getSameAs(r2)))
-            #    if len(overlap) > 0:
-            #        print(overlap)
+            sameAsR1 = getSameAs(r1)
+            if r2 in sameAsR1:
+                print("Offset match!")
+                printMatch(srcUri,p1,r1,parUri,p2,r2)
     #print matches
 
 target = 'http://dbpedia.org/resource/The_Hague'
@@ -109,5 +123,6 @@ print("Starting from resource: " + str(target))
 parallel = getOtherResource(target)[0]
 print("Determined parallel resource: " + str(parallel))
 # print('\n'.join([str(x) for x in getRelations(target)]))
+# print('\n'.join([str(x) for x in makeSameSet(target)]))
 findParallelConnections(target,parallel)
 
