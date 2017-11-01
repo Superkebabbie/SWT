@@ -107,14 +107,13 @@ def findParallelConnections(srcUri,parUri):
     print("Original has %d relations\nParallel has %d triples\nComparing %d triples"%(len(srcrels),len(parrels),len(srcrels)*len(parrels)))
     for p1,r1 in srcrels:
         #print counteri
-        for p2,r2 in parrels:#TODO: not a double loop, try to resolve this with clever data structure
-            if r1 == r2:
-                print("Identical match!")
-                printMatch(srcUri,p1,r1,parUri,p2,r2)
-            sameAsR1 = getSameAs(r1)
-            if r2 in sameAsR1:
-                print("Offset match!")
-                printMatch(srcUri,p1,r1,parUri,p2,r2)
+        for r in getSameAs(r1):
+            query = 'select ?p ?r where {<%s> ?p <%s> .}'%(parUri,r)
+            sparql = nlsparql
+            sparql.setQuery(query)
+            results = sparql.query().convert()["results"]["bindings"]
+            for p in results:
+                printMatch(srcUri,p1,r1,parUri,p['p']['value'],r)
     #print matches
 
 target = 'http://dbpedia.org/resource/The_Hague'
