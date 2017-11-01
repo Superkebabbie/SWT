@@ -17,7 +17,7 @@ def getLanguage(uri):
         return None
 
 def getRelations(uri):
-    query = 'select ?r ?p where {<' + uri + '> ?r ?p .}'
+    query = 'select ?p ?r where {<' + uri + '> ?p ?r .}'
     sparql = ensparql#assumes you can query English dbpedia by default, including regarding things that are not of the dbpedia domain
     if getLanguage(uri) == 'nl':
         sparql = nlsparql
@@ -25,7 +25,8 @@ def getRelations(uri):
     results = sparql.query().convert()["results"]["bindings"]
     pairs = []
     for pair in results:
-        pairs.append((pair['r']['value'],pair['p']['value']))
+        if isDBPedia(pair['r']['value']) and not 'wiki' in pair['p']['value']:
+            pairs.append((pair['p']['value'],pair['r']['value']))
     return pairs
     
 def getDutchResource(srcUri):
@@ -79,8 +80,10 @@ def printMatch(o1,p1,r1,o2,p2,r2):
         
 def findParallelConnections(srcUri,parUri):
     print("Finding parallels for " + str(srcUri) + " and " + str(parUri))
+    rels = getRelations(srcUri)
     parrels = getRelations(parUri)
-    for p1,r1 in getRelations(srcUri):
+    print("Original has %d relations\nParallel has %d relations\nComparing %d combinations"%(len(rels),len(parrels),len(rels)*len(parrels)))
+    for p1,r1 in rels:
         for p2,r2 in parrels:
             if r1 == r2:
                 print("Identical match!")
@@ -95,5 +98,6 @@ target = 'http://dbpedia.org/resource/The_Hague'
 print("Starting from resource: " + str(target))
 parallel = getOtherResource(target)[0]
 print("Determined parallel resource: " + str(parallel))
+# print('\n'.join([str(x) for x in getRelations(parallel)]))
 findParallelConnections(target,parallel)
 
