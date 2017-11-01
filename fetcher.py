@@ -106,15 +106,14 @@ def findParallelConnections(srcUri,parUri):
     parrels = getRelations(parUri)
     print("Original has %d relations\nParallel has %d triples\nComparing %d triples"%(len(srcrels),len(parrels),len(srcrels)*len(parrels)))
     for p1,r1 in srcrels:
-        #print counteri
         for r in getSameAs(r1):
             query = 'select ?p ?r where {<%s> ?p <%s> .}'%(parUri,r)
             sparql = nlsparql
             sparql.setQuery(query)
             results = sparql.query().convert()["results"]["bindings"]
             for p in results:
-                printMatch(srcUri,p1,r1,parUri,p['p']['value'],r)
-    #print matches
+                if isDBPedia(p['p']['value']) and not 'wiki' in p['p']['value']:
+                    printMatch(srcUri,p1,r1,parUri,p['p']['value'],r)
 
 target = 'http://dbpedia.org/resource/The_Hague'
 # target = 'http://nl.dbpedia.org/resource/Den_Haag'
