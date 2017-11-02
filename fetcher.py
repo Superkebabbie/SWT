@@ -114,7 +114,23 @@ def findParallelConnections(srcUri,parUri):
             for p in results:
                 if isDBPedia(p['p']['value']) and not 'wiki' in p['p']['value']:
                     printMatch(srcUri,p1,r1,parUri,p['p']['value'],r)
+                    findAdd((p1,p['p']['value']))
 
+def findAdd(s):
+    global matches
+    for match in matches:
+        added = 0
+        if s[0] in match and s[1] not in match:
+            match.add(s[1])
+            added = 1
+        elif s[1] in match and s[0] not in match:
+            match.add(s[0])
+            added = 1
+    if set([s[0],s[1]]) not in matches:
+            matches.append(set([s[0], s[1]]))
+    return
+
+matches = [set([0])]
 target = 'http://dbpedia.org/resource/The_Hague'
 # target = 'http://nl.dbpedia.org/resource/Den_Haag'
 print("Starting from resource: " + str(target))
@@ -123,4 +139,5 @@ print("Determined parallel resource: " + str(parallel))
 # print('\n'.join([str(x) for x in getRelations(target)]))
 # print('\n'.join([str(x) for x in makeSameSet(target)]))
 findParallelConnections(target,parallel)
-
+for match in matches:
+    print(match)
