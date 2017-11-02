@@ -36,6 +36,10 @@ def alignPrint(lists,headers = None):
         s.append('\t'.join([l[idx] for l in lists]))
     tablePrint('\n'.join(s))
     
+def linePrint(list):
+    #print a list but each element separated by a newline
+    print('\n'.join([str(x) for x in list]))
+    
 def flatten(list):
     #flatten a list of lists
     return [x for l in list for x in l]
@@ -49,3 +53,5 @@ def uniqueCount(list):
         else:
             dict[0] = 1
     return dict
+    
+#TODO: count dict (counts how many times key was added)

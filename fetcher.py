@@ -101,10 +101,10 @@ def makeSameSet(uri,sameset=None):
     return sameset
         
 def findParallelConnections(srcUri,parUri):
-    print("Finding parallels for " + str(srcUri) + " and " + str(parUri))
     srcrels = getRelations(srcUri)
     parrels = getRelations(parUri)
     print("Original has %d relations\nParallel has %d triples\nComparing %d triples"%(len(srcrels),len(parrels),len(srcrels)*len(parrels)))
+    proppairs = {}
     for p1,r1 in srcrels:
         for r in getSameAs(r1):
             query = 'select ?p ?r where {<%s> ?p <%s> .}'%(parUri,r)
@@ -114,6 +114,44 @@ def findParallelConnections(srcUri,parUri):
             for p in results:
                 if isDBPedia(p['p']['value']) and not 'wiki' in p['p']['value']:
                     printMatch(srcUri,p1,r1,parUri,p['p']['value'],r)
+                    pair = (p1,p['p']['value'])
+                    if pair in proppairs:
+                        proppairs[pair] += 1
+                    else:
+                        proppairs[pair] = 1
+    return proppairs
+    
+def suggestAdditions(srcUri,parUri,proppairs):
+    #using the found proppairs, suggest triples that may be added to both resources
+    srcrels = getRelations(srcUri)
+    parrels = getRelations(parUri)#TODO: streamline the fetching of relations?
+    easylookup = {}
+    for p1,p2 in proppairs:
+        #convert the proppairs dict to have single properties as keys so you can easily find properties it was paired with
+        if p1 in easylookup:
+            easylookup[p1] += [p2]
+        else:
+            easylookup[p1] = [p2]
+        if p2 in easylookup:
+            easylookup[p2] += [p1]
+        else:
+            easylookup[p2] = [p1]
+    for p,r in srcrels:
+        if p in easylookup:
+            sameProps = easylookup[p]
+            for p2 in sameProps:
+                count = 0 #compute amount of times pairing occured (may be two ways!)
+                if (p,p2) in proppairs:
+                    count += proppairs[(p,p2)]
+                if (p2,p) in proppairs:
+                    count += proppairs[(p2,p)]
+                if count >= 1:
+                    #pairing is significant, check if suggestion isn't already in parallel resource
+                    sameRes = getOtherResource(r)
+                    for r2 in sameRes:
+                        suggestion = (p2,r2)
+                        if suggestion not in parrels:
+                            print("Based on triple %s %s %s, we suggest adding %s %s %s"%(srcUri,p,r,parUri,p2,r2))
 
 target = 'http://dbpedia.org/resource/The_Hague'
 # target = 'http://nl.dbpedia.org/resource/Den_Haag'
@@ -122,5 +160,5 @@ parallel = getOtherResource(target)[0]
 print("Determined parallel resource: " + str(parallel))
 # print('\n'.join([str(x) for x in getRelations(target)]))
 # print('\n'.join([str(x) for x in makeSameSet(target)]))
-findParallelConnections(target,parallel)
-
+proppairs = findParallelConnections(target,parallel)
+suggestAdditions(target,parallel,proppairs)
