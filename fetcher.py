@@ -119,11 +119,14 @@ def findParallelConnections(srcUri,parUri):
 def findAdd(s):
     global matches
     for match in matches:
+        added = 0
         if s[0] in match and s[1] not in match:
+            added = 1
             match.add(s[1])
         elif s[1] in match and s[0] not in match:
+            added = 1
             match.add(s[0])
-    if set([s[0],s[1]]) not in matches:
+    if set([s[0],s[1]]) not in matches and added == 0:
             matches.append(set([s[0], s[1]]))
     return
 
