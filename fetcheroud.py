@@ -143,13 +143,24 @@ def findParallelConnections(srcUri, parUri):
             if r1 == r2:
                 print("Identical match!")
                 printMatch(srcUri, p1, r1, parUri, p2, r2)
+                findAdd()
             sameAsR1 = getSameAs(r1)
             if r2 in sameAsR1:
                 print("Offset match!")
                 printMatch(srcUri, p1, r1, parUri, p2, r2)
                 # print matches
 
-
+def findAdd(s):
+    global matches
+    for match in matches:
+        if s[0] in match and s[1] not in match:
+            match.add(s[1])
+        elif s[1] in match and s[0] not in match:
+            match.add(s[0])
+        else:
+            matches.append(set([s[0], s[1]]))
+            break
+    return
 target = 'http://dbpedia.org/resource/The_Hague'
 # target = 'http://nl.dbpedia.org/resource/Den_Haag'
 print("Starting from resource: " + str(target))

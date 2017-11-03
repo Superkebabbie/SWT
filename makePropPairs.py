@@ -1,9 +1,9 @@
-import re
+import re, csv
 import JoostKit
 from SPARQLWrapper import SPARQLWrapper, JSON, SPARQLExceptions
 
 linenum = 0
-max = -1
+max = 100
 
 ensparql = SPARQLWrapper("http://dbpedia.org/sparql")
 nlsparql = SPARQLWrapper("http://nl.dbpedia.org/sparql")
@@ -77,10 +77,31 @@ def URIname(uri):
     
 def printMatch(o1,p1,r1,o2,p2,r2):
     JoostKit.tablePrint('origin\tproperty\ttarget\n%s\t%s\t%s\n%s\t%s\t%s'%(o1,p1,r1,o2,p2,r2))
+    
+def findAdd(s):
+    global matches
+    added = 0
+    for match in matches:
+        if s[0] in match and s[1] not in match:
+            added = 1
+            match.add(s[1])
+        elif s[1] in match and s[0] not in match:
+            added = 1
+            match.add(s[0])
+    if set([s[0],s[1]]) not in matches and added == 0:
+            matches.append(set([s[0], s[1]]))
+    return
+    
+def writeMatches(filename):
+    writer = csv.writer(open(filename,'w',encoding='utf-8',newline=''),delimiter='\t')
+    for m in matches:
+        writer.writerow(list(m))
 
+matches = []
 for line in open('../infobox_properties_en.ttl','r',encoding='utf-8'):
     line = line.rstrip(' .\n')
     triple = re.findall('<(.+?)>',line)#also filters out data values, only keeps the templates
+    print(triple)
     if len(triple) == 3:
         o1, p1, r1 = triple
         if isInScope(o1) and isInScope(r1) and not 'wiki' in p1:
@@ -103,14 +124,9 @@ for line in open('../infobox_properties_en.ttl','r',encoding='utf-8'):
                         p2 = r['p']['value']
                         if 'wiki' not in p2:
                             printMatch(o1,p1,r1,o2,p2,r2)
-                            # if isDBPedia(p['p']['value']) and not 'wiki' in p['p']['value']:
-                                # printMatch(srcUri,p1,r1,parUri,p['p']['value'],r)
-                                # pair = (p1,p['p']['value'])
-                                # if pair in proppairs:
-                                    # proppairs[pair] += 1
-                                # else:
-                            # proppairs[pair] = 1
+                            findAdd((p1,p2))
             if linenum == max:
                 break
             else:
                 linenum += 1
+writeMatches('mined_links.csv')

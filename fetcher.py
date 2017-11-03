@@ -114,12 +114,13 @@ def findParallelConnections(srcUri,parUri):
             for p in results:
                 if isDBPedia(p['p']['value']) and not 'wiki' in p['p']['value']:
                     printMatch(srcUri,p1,r1,parUri,p['p']['value'],r)
-                    pair = (p1,p['p']['value'])
-                    if pair in proppairs:
-                        proppairs[pair] += 1
-                    else:
-                        proppairs[pair] = 1
-    return proppairs
+                    findAdd((p1,p['p']['value']))
+                    # pair = (p1,p['p']['value'])
+                    # if pair in proppairs:
+                        # proppairs[pair] += 1
+                    # else:
+                        # proppairs[pair] = 1
+    # return proppairs
     
 def suggestAdditions(srcUri,parUri,proppairs):
     #using the found proppairs, suggest triples that may be added to both resources
@@ -153,6 +154,21 @@ def suggestAdditions(srcUri,parUri,proppairs):
                         if suggestion not in parrels:
                             print("Based on triple %s %s %s, we suggest adding %s %s %s"%(srcUri,p,r,parUri,p2,r2))
 
+def findAdd(s):
+    global matches
+    for match in matches:
+        added = 0
+        if s[0] in match and s[1] not in match:
+            added = 1
+            match.add(s[1])
+        elif s[1] in match and s[0] not in match:
+            added = 1
+            match.add(s[0])
+    if set([s[0],s[1]]) not in matches and added == 0:
+            matches.append(set([s[0], s[1]]))
+    return
+
+matches = [set([0])]
 target = 'http://dbpedia.org/resource/The_Hague'
 # target = 'http://nl.dbpedia.org/resource/Den_Haag'
 print("Starting from resource: " + str(target))
@@ -160,5 +176,7 @@ parallel = getOtherResource(target)[0]
 print("Determined parallel resource: " + str(parallel))
 # print('\n'.join([str(x) for x in getRelations(target)]))
 # print('\n'.join([str(x) for x in makeSameSet(target)]))
-proppairs = findParallelConnections(target,parallel)
-suggestAdditions(target,parallel,proppairs)
+findParallelConnections(target,parallel)
+matches.remove(set([0]))
+for match in matches:
+    print(match)
