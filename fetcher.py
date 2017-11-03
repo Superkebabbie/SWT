@@ -119,13 +119,10 @@ def findParallelConnections(srcUri,parUri):
 def findAdd(s):
     global matches
     for match in matches:
-        added = 0
         if s[0] in match and s[1] not in match:
             match.add(s[1])
-            added = 1
         elif s[1] in match and s[0] not in match:
             match.add(s[0])
-            added = 1
     if set([s[0],s[1]]) not in matches:
             matches.append(set([s[0], s[1]]))
     return
@@ -139,5 +136,6 @@ print("Determined parallel resource: " + str(parallel))
 # print('\n'.join([str(x) for x in getRelations(target)]))
 # print('\n'.join([str(x) for x in makeSameSet(target)]))
 findParallelConnections(target,parallel)
+matches.remove(set([0]))
 for match in matches:
     print(match)
