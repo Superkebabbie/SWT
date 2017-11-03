@@ -78,7 +78,7 @@ def URIname(uri):
 def printMatch(o1,p1,r1,o2,p2,r2):
     JoostKit.tablePrint('origin\tproperty\ttarget\n%s\t%s\t%s\n%s\t%s\t%s'%(o1,p1,r1,o2,p2,r2))
 
-for line in open('infobox_properties_en.ttl','r',encoding='utf-8'):
+for line in open('../infobox_properties_en.ttl','r',encoding='utf-8'):
     line = line.rstrip(' .\n')
     triple = re.findall('<(.+?)>',line)#also filters out data values, only keeps the templates
     if len(triple) == 3:
