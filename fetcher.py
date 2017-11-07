@@ -115,12 +115,12 @@ def findParallelConnections(srcUri,parUri):
                 if isDBPedia(p['p']['value']) and not 'wiki' in p['p']['value']:
                     printMatch(srcUri,p1,r1,parUri,p['p']['value'],r)
                     findAdd((p1,p['p']['value']))
-                    # pair = (p1,p['p']['value'])
-                    # if pair in proppairs:
-                        # proppairs[pair] += 1
-                    # else:
-                        # proppairs[pair] = 1
-    # return proppairs
+                    pair = (p1,p['p']['value'])
+                    if pair in proppairs:
+                        proppairs[pair] += 1
+                    else:
+                        proppairs[pair] = 1
+    return proppairs
     
 def suggestAdditions(srcUri,parUri,proppairs):
     #using the found proppairs, suggest triples that may be added to both resources
@@ -176,7 +176,8 @@ parallel = getOtherResource(target)[0]
 print("Determined parallel resource: " + str(parallel))
 # print('\n'.join([str(x) for x in getRelations(target)]))
 # print('\n'.join([str(x) for x in makeSameSet(target)]))
-findParallelConnections(target,parallel)
-matches.remove(set([0]))
-for match in matches:
-    print(match)
+proppairs = findParallelConnections(target,parallel)
+suggestAdditions(target,parallel,proppairs)
+# matches.remove(set([0]))
+# for match in matches:
+    # print(match)
